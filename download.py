@@ -2,7 +2,7 @@ import os
 import requests
 
 
-class Downloader:
+class StreetViewImageDownloader:
     def __init__(self, addresses: set, output_directory: str, size: str = '600x400', fov: int = 120):
         """Initializes downloader
         Args:
