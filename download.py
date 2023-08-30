@@ -1,6 +1,5 @@
 import os
-import requests
-
+from RequestUtils import RequestUtils
 
 class StreetViewImageDownloader:
     def __init__(self, addresses: set, output_directory: str, size: str = '600x400', fov: int = 120):
@@ -27,32 +26,49 @@ class StreetViewImageDownloader:
         except OSError as error:
             print(f'Failed with error {error}')
 
-    def check_meta(self, address: str) -> bool:
-        # check metadata response to determine if imagery available at address
-        meta_base = 'https://maps.googleapis.com/maps/api/streetview/metadata?'
-        meta_params = {'key': self.api_key,
-                       'location': address}
-        meta_response = requests.get(meta_base, params=meta_params)
-        return meta_response.json()['status'] == 'OK'
+    def meta_url(self, address: str) -> str:
+        # generate metadata request url given address
+        return f"https://maps.googleapis.com/maps/api/streetview/metadata?location={address}&size={self.size}&fov={self.size}&key={self.api_key}"
 
-    def download_image(self, address: str) -> requests.Response:
-        # request image
-        pic_base = 'https://maps.googleapis.com/maps/api/streetview?'
-        pic_params = {'key': self.api_key,
-                      'location': address,
-                      'size': self.size,
-                      'fov': self.fov}
-        return requests.get(pic_base, pic_params)
+    def generate_meta_urls(self,) -> list(str):
+        # generate list of metadata request urls
+        requests = []
+        for address in self.addresses:
+            requests.append(self.meta_url(address))
+        return requests
 
-    def download_images(self,) -> None:
-        # use other class methods to download all images
-        self.make_output_dir()
-        for addy in self.addresses:
-            # only attempt to download image if metadata request returns valid for location
-            if self.check_meta(addy):
-                print(f'Valid metadata at {addy}')
-                image = self.download_image(addy)
-                with open(self.output_directory + '\\' + addy + '.jpg', 'wb') as file:
-                    file.write(image.content)
+    def execute_meta_check(self, meta_urls: list(str)) -> None:
+        # execute metadata requests and store results 
+        # results stored as list of valid addresses in self.valid_addresses
+        meta_urls = self.generate_meta_urls()
+        meta_results = RequestUtils.make_requests(meta_urls)
+        valid_addresses = []
+        for address, meta_response in self.addresses,  meta_results:
+            if meta_response[0].json()['status'] == 'OK':
+                valid_addresses.append(address)
             else:
-                print(f'Invalid metadata at {addy}')
+                print(f'Invalid metadata at {address}.')
+        self.valid_addresses = valid_addresses
+
+    def download_url(self, address: str) -> str:
+        # generate image request url given address
+        return f"https://maps.googleapis.com/maps/api/streetview?key={self.api_key}&location={address}&size={self.size}&fov={self.fov}"
+        
+    def generate_download_urls(self,) -> list(str):
+        # generate list of image request urls
+        urls = []
+        for address in self.valid_addresses:
+            urls.append(self.download_url(address))
+        return urls
+
+    def download_images(self, address: str) -> None:
+        # Execute image requests using request utils
+        # download results to output directory
+        self.make_output_dir()
+        image_urls = self.generate_download_urls()
+        image_results = RequestUtils.make_requests(image_urls)
+        for address, image in self.valid_addresses, image_results:
+            with open(self.output_directory + '\\' + address + '.jpg', 'wb') as file:
+                file.write(image.content)
+
+    
