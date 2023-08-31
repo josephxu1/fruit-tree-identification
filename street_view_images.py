@@ -11,7 +11,7 @@ class StreetViewImageDownloader:
             fov (int): field of view of image, default 120 which is the max
         """
         self.addresses = addresses
-        self.fov = 120
+        self.fov = 90
         self.output_directory = output_directory
         self.api_key = os.getenv("GOOGLE_API_KEY")
         self.size = size
