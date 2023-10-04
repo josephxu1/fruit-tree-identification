@@ -3,7 +3,7 @@ import requests
 
 
 class Downloader:
-    def __init__(self, addresses: set, output_directory: str, size: str = '600x400', fov: int = 120):
+    def __init__(self, addresses: set, output_directory: str, size: str = '640x640', fov: int = 120):
         """Initializes downloader
         Args:
             addresses (set): set of addresses generated in addresses.py
