@@ -8,7 +8,6 @@ async def fetch_html(url: str, session: ClientSession, json_only=False, **kwargs
         return (None, 404)
     if json_only:
         return await response.json(), response.status
-    print(response)
     return response, response.status
 
 
