@@ -1,6 +1,6 @@
 import os
 import asyncio
-from RequestUtils import RequestUtils
+from  request_utils import fetch_parallel_requests
 
 # accessing API key from environment variables
 MAPBOX_ACCESS_TOKEN = os.getenv("MAPBOX_API_KEY")
@@ -67,14 +67,14 @@ class AddressRequester():
 
     @staticmethod
     def request(urls, **kwargs):
-        return AddressRequester.process_results(RequestUtils.make_requests(urls))
+        return AddressRequester.process_results(fetch_parallel_requests(urls))
 
     @staticmethod
     def request_all_in_rectangle(latitude_min, longitude_min, latitude_max, longitude_max, delta):
         urls = AddressRequester.requests_in_rectangle(
             latitude_min, longitude_min, latitude_max, longitude_max, delta)
         print(f"{len(urls)} requests made")
-        results = RequestUtils.make_requests(urls, json_only=True)
+        results = fetch_parallel_requests(urls, json_only=True)
         return AddressRequester.process_results(results)
 
 
