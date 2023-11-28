@@ -1,7 +1,6 @@
 import asyncio
 from aiohttp import ClientSession, ClientConnectorError
 
-@staticmethod
 async def fetch_html(url: str, session: ClientSession, json_only=False, **kwargs) -> tuple:
     try:
         response = await session.request(method="GET", url=url, **kwargs)
@@ -12,8 +11,8 @@ async def fetch_html(url: str, session: ClientSession, json_only=False, **kwargs
     print(response)
     return response, response.status
 
-@staticmethod
-async def _make_requests(urls, json_only=False, **kwargs) -> None:
+
+async def _make_requests(urls, json_only=False, **kwargs):
     async with ClientSession() as session:
         tasks = []
         for url in urls:
@@ -24,6 +23,6 @@ async def _make_requests(urls, json_only=False, **kwargs) -> None:
 
     return results
 
-@staticmethod
-def fetch_parallel_requests(urls, json_only=False, **kwargs) -> None:
-    asyncio.run(_make_requests(urls,json_only=json_only, **kwargs))
+
+async def fetch_parallel_requests(urls, json_only=False, **kwargs):
+    return await _make_requests(urls, json_only=json_only, **kwargs)
