@@ -135,4 +135,6 @@ class TestFetchParallelRequestsOrder(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(unittest.main())
+
