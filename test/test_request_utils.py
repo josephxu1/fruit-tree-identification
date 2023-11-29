@@ -13,7 +13,7 @@ import errno
 import asyncio
 from aiohttp import web
 from aiohttp.test_utils import TestServer, unittest_run_loop
-
+from windows_asyncio_utils import windows_run
 
 class TestRequestUtils(unittest.TestCase):
 
@@ -135,6 +135,4 @@ class TestFetchParallelRequestsOrder(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    asyncio.run(unittest.main())
-
+    windows_run(unittest.main)
