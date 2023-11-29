@@ -6,6 +6,9 @@ sys.path.append(parent_dir)
 import unittest
 from unittest.mock import patch
 from street_view_images import StreetViewImageDownloader
+import os
+from windows_asyncio_utils import windows_run
+
 
 class TestStreetViewImageDownloader(unittest.TestCase):
 
@@ -27,61 +30,65 @@ class TestStreetViewImageDownloader(unittest.TestCase):
 
     def test_meta_url(self):
         address = 'New York City'
-        expected_url = 'https://maps.googleapis.com/maps/api/streetview/metadata?location=New York City&key=None'
+        expected_url = f'https://maps.googleapis.com/maps/api/streetview/metadata?location=New York City&key={self.downloader.api_key}'
         self.assertEqual(self.downloader.meta_url(address), expected_url)
 
     def test_generate_meta_urls(self):
-        addresses = {'New York City', 'San Francisco'}
+        addresses = ['New York City', 'San Francisco']
         expected_urls = [
-            'https://maps.googleapis.com/maps/api/streetview/metadata?location=New York City&key=None',
-            'https://maps.googleapis.com/maps/api/streetview/metadata?location=San Francisco&key=None'
+            f'https://maps.googleapis.com/maps/api/streetview/metadata?location=New York City&key={self.downloader.api_key}',
+            f'https://maps.googleapis.com/maps/api/streetview/metadata?location=San Francisco&key={self.downloader.api_key}'
         ]
         self.assertEqual(self.downloader.generate_meta_urls(addresses), expected_urls)
 
-    def test_execute_meta_check_valid_addresses(self):
+    async def test_execute_meta_check_valid_addresses(self):
         addresses = {'New York City', 'San Francisco'}
-        with patch('RequestUtils.make_requests') as mock_make_requests:
+        with patch('request_utils._make_requests') as mock_make_requests:
             mock_make_requests.return_value = [
                 (MockResponse({'status': 'OK'}),),
                 (MockResponse({'status': 'OK'}),)
             ]
-            valid_addresses = self.downloader.execute_meta_check(addresses)
+            valid_addresses = await self.downloader.execute_meta_check(addresses)
             self.assertEqual(valid_addresses, addresses)
 
-    def test_execute_meta_check_invalid_addresses(self):
+    async def test_execute_meta_check_invalid_addresses(self):
         addresses = {'New York City', 'San Francisco'}
-        with patch('RequestUtils.make_requests') as mock_make_requests:
+        with patch('request_utils._make_requests') as mock_make_requests:
             mock_make_requests.return_value = [
                 (MockResponse({'status': 'INVALID'}),),
                 (MockResponse({'status': 'OK'}),)
             ]
-            valid_addresses = self.downloader.execute_meta_check(addresses)
+            valid_addresses = await self.downloader.execute_meta_check(addresses)
             self.assertEqual(valid_addresses, {'San Francisco'})
 
     def test_download_url(self):
         address = 'New York City'
-        expected_url = 'https://maps.googleapis.com/maps/api/streetview?key=None&location=New York City&size=600x400&fov=120'
+        expected_url = f'https://maps.googleapis.com/maps/api/streetview?key={self.downloader.api_key}&location=New York City&size=600x400&fov=120'
         self.assertEqual(self.downloader.download_url(address), expected_url)
 
     def test_generate_download_urls(self):
-        valid_addresses = {'New York City', 'San Francisco'}
+        valid_addresses = ['348 Harper Ln, Danville CA', '669 Adobe Dr, Danville CA']
         expected_urls = [
-            'https://maps.googleapis.com/maps/api/streetview?key=None&location=New York City&size=600x400&fov=120',
-            'https://maps.googleapis.com/maps/api/streetview?key=None&location=San Francisco&size=600x400&fov=120'
+            f'https://maps.googleapis.com/maps/api/streetview?key={self.downloader.api_key}&location={valid_addresses[0]}&size=600x400&fov=120',
+            f'https://maps.googleapis.com/maps/api/streetview?key={self.downloader.api_key}&location={valid_addresses[1]}&size=600x400&fov=120'
         ]
         self.assertEqual(self.downloader.generate_download_urls(valid_addresses), expected_urls)
 
-    def test_download_images(self):
-        valid_addresses = {'New York City', 'San Francisco'}
-        with patch('RequestUtils.make_requests') as mock_make_requests:
+
+    async def test_download_images(self):
+        valid_addresses = ['348 Harper Ln, Danville CA', '669 Adobe Dr, Danville CA']
+        test_output_directory = 'test_output_directory'
+        with patch('request_utils._make_requests') as mock_make_requests:
             mock_make_requests.return_value = [
                 (MockResponse(content=b'image1'),),
                 (MockResponse(content=b'image2'),)
             ]
+            test_downloader = StreetViewImageDownloader(test_output_directory)
             with patch('builtins.open', create=True) as mock_open:
-                self.downloader.download_images(valid_addresses)
-                mock_open.assert_any_call('output_directory\\New York City.jpg', 'wb')
-                mock_open.assert_any_call('output_directory\\San Francisco.jpg', 'wb')
+                await test_downloader.download_images(valid_addresses)
+                print(mock_open.call_args_list())
+                mock_open.assert_any_call(os.path.join(test_downloader.output_directory, f'{valid_addresses[0]}.jpg'), 'wb')
+                mock_open.assert_any_call(os.path.join(test_downloader.output_directory, f'{valid_addresses[1]}.jpg'), 'wb')
                 # Add additional assertions if needed
 
 class MockResponse:
@@ -93,4 +100,4 @@ class MockResponse:
         return self.json_data
 
 if __name__ == '__main__':
-    unittest.main()
+    windows_run(unittest.main())

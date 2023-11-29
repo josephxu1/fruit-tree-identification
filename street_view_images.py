@@ -33,11 +33,11 @@ class StreetViewImageDownloader:
             requests.append(self.meta_url(address))
         return requests
 
-    def execute_meta_check(self, addresses: set) -> list[str]:
+    async def execute_meta_check(self, addresses: set) -> list[str]:
         # execute metadata requests and store results 
         # results stored as list of valid addresses
         meta_urls = self.generate_meta_urls(addresses)
-        meta_results = fetch_parallel_requests(meta_urls)
+        meta_results = await fetch_parallel_requests(meta_urls)
         valid_addresses = []
         for address, meta_response in zip(addresses, meta_results):
             if meta_response[0].json()['status'] == 'OK':
@@ -61,14 +61,14 @@ class StreetViewImageDownloader:
             urls.append(self.download_url(address, size, fov))
         return urls
 
-    def download_images(self, valid_addresses: list[str], size: str = None, fov: int = None) -> None:
+    async def download_images(self, valid_addresses: list[str], size: str = None, fov: int = None) -> None:
         # Execute image requests using request utils
         # download results to output directory
         size = size or self.SIZE
         fov = fov or self.FOV
         self.make_output_dir()
         image_urls = self.generate_download_urls(valid_addresses, size, fov)
-        image_results = fetch_parallel_requests(image_urls)
+        image_results = await fetch_parallel_requests(image_urls)
         for address, image in zip(valid_addresses, image_results):
-            with open(self.output_directory + '\\' + address + '.jpg', 'wb') as file:
+            with open(os.path.join(self.output_directory, f"{address}.jpg"), 'wb') as file:
                 file.write(image.content)
